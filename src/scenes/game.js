@@ -4,7 +4,7 @@ import { makeMotobug, makeMotobugPasha } from "../entities/motobug";
 import { makeRing } from "../entities/ring";
 
 export default function game() {
-  const citySfx = k.play("city", { volume: 0.2, loop: true });
+  const citySfx = k.play("city", { volume: 0.5, loop: true });
   k.setGravity(3100);
   const bgPieceWidth = 1920;
   const bgPieces = [
