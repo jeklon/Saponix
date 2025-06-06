@@ -1,7 +1,7 @@
 {
   "name": "sonic-runner",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,9 +9,9 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^5.4.19"
+    "vite": "^5.0.0"
   },
   "dependencies": {
-    "kaplay": "^3001.0.18"
+    "kaboom": "^3000.1.17"
   }
 }
