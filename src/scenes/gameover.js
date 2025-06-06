@@ -27,7 +27,7 @@ export default function gameover(citySfx) {
   }
 
   k.add([
-    k.text("GAME OVER", { font: "mania", size: 96 }),
+    k.text("SPRINT IS OVER, ALL TASKS KICKED BACK", { font: "mania", size: 96 }),
     k.anchor("center"),
     k.pos(k.center().x, k.center().y - 300),
   ]);

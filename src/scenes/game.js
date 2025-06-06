@@ -41,7 +41,7 @@ export default function game() {
   });
 
   const scoreText = k.add([
-    k.text("SCORE : 0", { font: "mania", size: 72 }),
+    k.text("BUGS are FIXED : 0", { font: "mania", size: 72 }),
     k.pos(20, 20),
   ]);
   let score = 0;
@@ -50,8 +50,8 @@ export default function game() {
     k.play("ring", { volume: 0.5 });
     k.destroy(ring);
     score++;
-    scoreText.text = `SCORE : ${score}`;
-    sonic.ringCollectUI.text = "+1";
+    scoreText.text = `BUGS are FIXED : ${score}`;
+    sonic.ringCollectUI.text = "+1 Bug Fix";
     k.wait(1, () => {
       sonic.ringCollectUI.text = "";
     });
@@ -65,9 +65,9 @@ export default function game() {
       sonic.jump();
       scoreMultiplier += 1;
       score += 10 * scoreMultiplier;
-      scoreText.text = `SCORE : ${score}`;
+      scoreText.text = `BUGS are FIXED : ${score}`;
       if (scoreMultiplier === 1)
-        sonic.ringCollectUI.text = `+${10 * scoreMultiplier}`;
+        sonic.ringCollectUI.text = `+${10 * scoreMultiplier} BUG FIX`;
       if (scoreMultiplier > 1) sonic.ringCollectUI.text = `x${scoreMultiplier}`;
       k.wait(1, () => {
         sonic.ringCollectUI.text = "";

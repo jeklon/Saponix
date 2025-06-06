@@ -22,7 +22,7 @@ export default function mainMenu() {
   ];
 
   k.add([
-    k.text("SONIC RING RUN", { font: "mania", size: 96 }),
+    k.text("SAPONIC SPRINT RUN", { font: "mania", size: 96 }),
     k.anchor("center"),
     k.pos(k.center().x, 200),
   ]);
@@ -74,17 +74,6 @@ export default function mainMenu() {
     k.area(),
     k.z(101),
     "sliderKnob"
-  ]);
-
-  // Метка "Volume"
-  k.add([
-    k.text("VOLUME", {
-      font: "mania",
-      size: 16
-    }),
-    k.color(255, 255, 255),
-    k.pos(24, 40),
-    k.z(102),
   ]);
 
   let dragging = false;
