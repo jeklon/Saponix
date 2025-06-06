@@ -4,6 +4,8 @@ import { makeMotobug, makeMotobugPasha } from "../entities/motobug";
 import { makeRing } from "../entities/ring";
 
 export default function game() {
+  let sanyaGameOverSound = k.play("SanyaGameOver", { volume: 0.5, loop: false });
+  sanyaGameOverSound.paused = true;
   const citySfx = k.play("city", { volume: 0.5, loop: true });
   k.setGravity(3100);
   const bgPieceWidth = 1920;
@@ -77,7 +79,7 @@ export default function game() {
 
     k.play("hurt", { volume: 0.5 });
     k.setData("current-score", score);
-    k.go("gameover", citySfx);
+    k.go("gameover", citySfx, sanyaGameOverSound);
   });
 
   let gameSpeed = 300;
@@ -175,7 +177,6 @@ export default function game() {
     platforms[1].moveTo(platforms[0].pos.x + platforms[1].width * 4, 450);
   });
 
-  // Добавляем после scoreText
   let volume = k.getData("volume", 0.5); // Получаем сохраненную громкость или используем 0.5
   k.setVolume(volume);
   

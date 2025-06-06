@@ -1,7 +1,9 @@
 import k from "../kaplayCtx";
 
-export default function gameover(citySfx) {
+export default function gameover(citySfx, sanyaGameOverSound) {
   citySfx.paused = true;
+  sanyaGameOverSound.paused = false;
+  sanyaGameOverSound.volume;
   let bestScore = k.getData("best-score");
   const currentScore = k.getData("current-score");
 
@@ -85,6 +87,8 @@ export default function gameover(citySfx) {
       k.anchor("center"),
       k.pos(k.center().x, k.center().y + 350),
     ]);
-    k.onButtonPress("jump", () => k.go("game"));
+    k.onButtonPress("jump", () =>{ 
+      sanyaGameOverSound.paused = true;
+      k.go("game");});
   });
 }

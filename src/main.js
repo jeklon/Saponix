@@ -44,6 +44,8 @@ k.loadSound("hyper-ring", "sounds/HyperRing.wav");
 k.loadSound("jump", "sounds/Jump.wav");
 k.loadSound("ring", "sounds/Ring.wav");
 k.loadSound("city", "sounds/DyadyaShikamadu.mp3");
+k.loadSound("AdminPanelMoyaTurma", "sounds/AdminPanelMoyaTurmaTrimmed.mp3");
+k.loadSound("SanyaGameOver", "sounds/SanyaGameOver.mp3");
 
 k.scene("disclaimer", disclaimer);
 k.scene("main-menu", mainMenu);

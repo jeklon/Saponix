@@ -2,8 +2,11 @@ import k from "../kaplayCtx";
 import { makeSonic } from "../entities/sonic";
 
 export default function mainMenu() {
+  let moyaTurmaSound = k.play("AdminPanelMoyaTurma", { volume: 0.1, loop: false });
   if (!k.getData("best-score")) k.setData("best-score", 0);
-  k.onButtonPress("jump", () => k.go("game"));
+  k.onButtonPress("jump", () =>{ 
+    moyaTurmaSound.paused = true;
+    k.go("game")});
 
   const bgPieceWidth = 1920;
   const bgPieces = [
@@ -53,46 +56,29 @@ export default function mainMenu() {
     platforms[1].moveTo(platforms[0].pos.x + platforms[1].width * 4, 450);
   });
 
-  // --- Добавляем ползунок громкости ---
-  let volume = 0.5;
+  let volume = k.getData("volume", 0.5); // Получаем сохраненную громкость или используем 0.5
   k.setVolume(volume);
-
-  const sliderBg = k.add([
-    k.rect(104, 12),
-    k.color(40, 40, 40),
-    k.outline(2, k.rgb(120, 120, 120)),
-    k.pos(24, 20), // Позиционируем в верхнем левом углу
+  
+  const volumeText = k.add([
+    k.text(`VOLUME: ${Math.round(volume * 100)}%`, { 
+      font: "mania", 
+      size: 32 
+    }),
+    k.pos(20, 100), // Располагаем под счетом
     k.z(100),
-    "sliderBg"
   ]);
 
-  const sliderKnob = k.add([
-    k.rect(12, 16),
-    k.color(255, 220, 40),
-    k.outline(2, k.rgb(80, 80, 0)),
-    k.pos(24 + volume * 92, 16),
-    k.area(),
-    k.z(101),
-    "sliderKnob"
-  ]);
-
-  let dragging = false;
-
-  sliderKnob.onMouseDown(() => {
-    dragging = true;
+  k.onKeyPress("left", () => {
+    volume = Math.max(0, volume - 0.1); // Уменьшаем громкость на 10%
+    k.setVolume(volume);
+    k.setData("volume", volume); // Сохраняем значение
+    volumeText.text = `VOLUME: ${Math.round(volume * 100)}%`;
   });
 
-  sliderKnob.onUpdate(() => {
-    if (dragging) {
-      const mouseX = k.mousePos().x;
-      const newX = Math.max(24, Math.min(mouseX - 6, 104 + 24 - 12));
-      sliderKnob.pos.x = newX;
-      volume = (sliderKnob.pos.x - 24) / 92;
-      k.setVolume(volume);
-    }
-  });
-
-  k.onMouseRelease(() => {
-    dragging = false;
+  k.onKeyPress("right", () => {
+    volume = Math.min(1, volume + 0.1); // Увеличиваем громкость на 10%
+    k.setVolume(volume);
+    k.setData("volume", volume); // Сохраняем значение
+    volumeText.text = `VOLUME: ${Math.round(volume * 100)}%`;
   });
 }
