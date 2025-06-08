@@ -47,6 +47,7 @@ export default function game() {
     k.pos(20, 20),
   ]);
   let score = 0;
+  let scoreBeforeDeath = 0;
   let scoreMultiplier = 0;
   sonic.onCollide("ring", (ring) => {
     if (sonic.invincible) return; // Не подбираем кольца, если неуязвим!
@@ -101,11 +102,14 @@ export default function game() {
       k.wait(1, () => {
         sonic.ringCollectUI.text = "";
       });
-      return;
+       
+  return;
     }
-
+    
     if (score > 0 && !sonic.invincible) {
       spawnBurstRings(sonic.pos, score);
+      scoreBeforeDeath = score;
+      console.log(scoreBeforeDeath);
       score = 0;
       scoreText.text = `BUGS are FIXED : ${score}`;
       k.play("ring", { volume: 0.5 });
@@ -116,7 +120,6 @@ export default function game() {
       const blinkTotal = 4;
       const blinkInterval = 0.25; // секунды
 
-      // Функция мигания
       function blink() {
         if (!sonic.exists()) return;
         sonic.opacity = sonic.opacity === 0.5 ? 1 : 0.5;
@@ -138,10 +141,19 @@ export default function game() {
       });
 
       return;
-    } else {
-      // Если score == 0 — сразу gameover
+    } else {    if (score > 0 && !sonic.invincible) {
+      spawnBurstRings(sonic.pos, score);
+      score = 0;
+      scoreText.text = `BUGS are FIXED : ${score}`;
+      k.play("ring", { volume: 0.5 });
       k.play("hurt", { volume: 0.5 });
-      k.setData("current-score", score);
+      // Делаем Соника неуязвимым
+      sonic.invincible = true;
+      
+    }
+      // Если score == 0 — сразу gameover
+      
+      k.setData("current-score", scoreBeforeDeath);
       k.go("gameover", citySfx, sanyaGameOverSound);
     }
   });
