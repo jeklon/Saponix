@@ -6,6 +6,13 @@ import mainMenu from "./scenes/mainMenu";
 
 k.loadSprite("chemical-bg", "graphics/chemical-bg.png");
 k.loadSprite("platforms", "graphics/platforms.png");
+k.loadSprite("toastyVlad", "graphics/toastyVlad.png", {
+  sliceX: 5,
+  sliceY: 6,
+  anims: {
+    toasty: { from: 0, to: 29, loop: false, speed: 30 }
+  },
+});
 k.loadSprite("sonic", "graphics/sonic.png", {
   sliceX: 8,
   sliceY: 2,
@@ -47,6 +54,7 @@ k.loadSound("city", "sounds/DyadyaShikamadu.mp3");
 k.loadSound("AdminPanelMoyaTurma", "sounds/AdminPanelMoyaTurmaTrimmed.mp3");
 k.loadSound("SanyaGameOver", "sounds/SanyaGameOver.mp3");
 k.loadSound("LoseRings", "sounds/LoseRings.wav");
+k.loadSound("toasty", "sounds/toasty.mp3");
 
 k.scene("disclaimer", disclaimer);
 k.scene("main-menu", mainMenu);

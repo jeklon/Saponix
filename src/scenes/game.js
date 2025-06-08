@@ -102,8 +102,23 @@ export default function game() {
       k.wait(1, () => {
         sonic.ringCollectUI.text = "";
       });
-       
-  return;
+
+      // --- Показываем toastyVlad при scoreMultiplier === 3 ---
+      if (scoreMultiplier === 2) {
+        k.play("toasty");
+        const toasty = k.add([
+          k.sprite("toastyVlad", { anim: "toasty" }),
+          k.area(),
+          k.anchor("botright"), // якорь — правый нижний угол спрайта
+          k.pos(k.width(), k.height()), // позиция — правый нижний угол экрана
+          k.z(999),
+          "toastyVladUI"
+        ]);
+        // Убираем через 1.5 секунды
+        k.wait(1.5, () => k.destroy(toasty));
+      }
+
+      return;
     }
     
     if (score > 0 && !sonic.invincible) {
