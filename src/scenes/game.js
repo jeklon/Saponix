@@ -49,6 +49,30 @@ export default function game() {
   let score = 0;
   let scoreMultiplier = 0;
   sonic.onCollide("ring", (ring) => {
+    if (sonic.invincible) return; // Не подбираем кольца, если неуязвим!
+
+    // Проверяем, не находится ли кольцо под мотобагом
+    const motobugs = k.get("enemy"); // Получаем всех мотобагов на сцене (если тег "enemy" присвоен мотобагу)
+    const ringBox = ring.area ? ring.area : ring; // если есть area, используем его
+
+    // Проверяем пересечение с каждым мотобагом
+    let isUnderMotobug = motobugs.some(motobug => {
+      // Проверяем пересечение прямоугольников
+      const bugBox = motobug.area ? motobug.area : motobug;
+      return (
+        ring.pos.x < motobug.pos.x + motobug.width &&
+        ring.pos.x + ring.width > motobug.pos.x &&
+        ring.pos.y < motobug.pos.y + motobug.height &&
+        ring.pos.y + ring.height > motobug.pos.y
+      );
+    });
+
+    if (isUnderMotobug) {
+      // Кольцо под мотобагом — не подбираем!
+      return;
+    }
+
+    // Если не под мотобагом — обычная логика
     k.play("ring", { volume: 0.5 });
     k.destroy(ring);
     score++;
@@ -59,7 +83,10 @@ export default function game() {
     });
   });
   sonic.onCollide("enemy", (enemy) => {
+    if (sonic.invincible) return; // Неуязвим — не реагируем!
+
     if (!sonic.isGrounded()) {
+      // ...атака сверху, уничтожаем врага...
       k.play("destroy", { volume: 0.5 });
       k.play("hyper-ring", { volume: 0.5 });
       k.destroy(enemy);
@@ -77,9 +104,46 @@ export default function game() {
       return;
     }
 
-    k.play("hurt", { volume: 0.5 });
-    k.setData("current-score", score);
-    k.go("gameover", citySfx, sanyaGameOverSound);
+    if (score > 0 && !sonic.invincible) {
+      spawnBurstRings(sonic.pos, score);
+      score = 0;
+      scoreText.text = `BUGS are FIXED : ${score}`;
+      k.play("ring", { volume: 0.5 });
+
+      // Делаем Соника неуязвимым
+      sonic.invincible = true;
+      let blinkCount = 0;
+      const blinkTotal = 4;
+      const blinkInterval = 0.25; // секунды
+
+      // Функция мигания
+      function blink() {
+        if (!sonic.exists()) return;
+        sonic.opacity = sonic.opacity === 0.5 ? 1 : 0.5;
+        blinkCount++;
+        if (blinkCount < blinkTotal * 2) {
+          k.wait(blinkInterval, blink);
+        } else {
+          sonic.opacity = 1;
+        }
+      }
+      sonic.opacity = 0.5;
+      blink();
+
+      // Через 2 секунды возвращаем смертность и дефолтный вид
+      k.wait(2, () => {
+        if (!sonic.exists()) return;
+        sonic.invincible = false;
+        sonic.opacity = 1;
+      });
+
+      return;
+    } else {
+      // Если score == 0 — сразу gameover
+      k.play("hurt", { volume: 0.5 });
+      k.setData("current-score", score);
+      k.go("gameover", citySfx, sanyaGameOverSound);
+    }
   });
 
   let gameSpeed = 300;
@@ -202,6 +266,80 @@ export default function game() {
     k.setData("volume", volume); // Сохраняем значение
     volumeText.text = `VOLUME: ${Math.round(volume * 100)}%`;
   });
+}
+
+// Функция для анимации разлетающихся колец
+function spawnBurstRings(origin, count = 32) {
+  let t = 0;
+  let angle = 101.25;
+  let n = false;
+  let speed = 1200;
+  const bounce = 0.7; // коэффициент упругости
+
+  // Получаем платформы и bgPieces для проверки столкновений
+  const platforms = k.get("platform");
+
+  while (t < count) {
+    const ring = k.add([
+      k.sprite("ring"),
+      k.scale(2),
+      k.pos(origin.x, origin.y),
+      k.z(200),
+      {
+        vx: Math.cos((angle * Math.PI) / 180) * speed * (n ? -1 : 1),
+        vy: -Math.sin((angle * Math.PI) / 180) * speed,
+        life: 360,
+        update() {
+          this.move(this.vx, this.vy);
+          this.vy += 0.4;
+
+          // Отскок от платформы
+          platforms.forEach(platform => {
+            const platTop = platform.pos.y;
+            const platLeft = platform.pos.x;
+            const platRight = platform.pos.x + (platform.width || 1920);
+            if (
+              this.pos.y + this.height >= platTop &&
+              this.pos.y + this.height <= platTop + Math.abs(this.vy) + 2 &&
+              this.pos.x + this.width > platLeft &&
+              this.pos.x < platRight &&
+              this.vy > 0
+            ) {
+              this.pos.y = platTop - this.height;
+              this.vy = -this.vy * bounce;
+            }
+          });
+
+          // Отскок от верхней границы экрана
+          if (this.pos.y <= 0 && this.vy < 0) {
+            this.pos.y = 0;
+            this.vy = -this.vy * bounce;
+          }
+
+          // --- МИГАНИЕ в последние 2 секунды (120 кадров) ---
+          if (this.life <= 120) {
+            // Мигаем каждые 10 кадров
+            this.opacity = (Math.floor(this.life / 10) % 2 === 0) ? 0.3 : 1;
+          } else {
+            this.opacity = 1;
+          }
+
+          this.life--;
+          if (this.life <= 0) k.destroy(this);
+        },
+      },
+    ]);
+
+    if (n) {
+      angle += 22.5;
+    }
+    n = !n;
+    t++;
+    if (t === 16) {
+      speed = 600;
+      angle = 101.25;
+    }
+  }
 }
 
 
