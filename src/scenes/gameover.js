@@ -42,7 +42,7 @@ export default function gameover(citySfx, sanyaGameOverSound) {
     k.pos(k.center().x - 400, k.center().y - 200),
   ]);
   k.add([
-    k.text(`CURRENT SCORE : ${currentScore}`, {
+    k.text(`SCORE BEFORE DEATH : ${currentScore}`, {
       font: "mania",
       size: 64,
     }),

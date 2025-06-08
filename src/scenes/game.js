@@ -112,7 +112,7 @@ export default function game() {
       console.log(scoreBeforeDeath);
       score = 0;
       scoreText.text = `BUGS are FIXED : ${score}`;
-      k.play("ring", { volume: 0.5 });
+      k.play("LoseRings", { volume: 0.5 });
 
       // Делаем Соника неуязвимым
       sonic.invincible = true;
@@ -145,8 +145,6 @@ export default function game() {
       spawnBurstRings(sonic.pos, score);
       score = 0;
       scoreText.text = `BUGS are FIXED : ${score}`;
-      k.play("ring", { volume: 0.5 });
-      k.play("hurt", { volume: 0.5 });
       // Делаем Соника неуязвимым
       sonic.invincible = true;
       
@@ -281,7 +279,7 @@ export default function game() {
 }
 
 // Функция для анимации разлетающихся колец
-function spawnBurstRings(origin, count = 32) {
+function spawnBurstRings(origin, count = score) {
   let t = 0;
   let angle = 101.25;
   let n = false;
