@@ -151,12 +151,9 @@ export default function game() {
 
     // Проверяем, не находится ли кольцо под мотобагом
     const motobugs = k.get("enemy"); // Получаем всех мотобагов на сцене (если тег "enemy" присвоен мотобагу)
-    const ringBox = ring.area ? ring.area : ring; // если есть area, используем его
-
     // Проверяем пересечение с каждым мотобагом
     let isUnderMotobug = motobugs.some(motobug => {
       // Проверяем пересечение прямоугольников
-      const bugBox = motobug.area ? motobug.area : motobug;
       return (
         ring.pos.x < motobug.pos.x + motobug.width &&
         ring.pos.x + ring.width > motobug.pos.x &&
@@ -249,7 +246,7 @@ export default function game() {
           k.anchor("botright"), // якорь — правый нижний угол спрайта
           k.pos(k.width(), k.height()), // позиция — правый нижний угол экрана
           k.z(999),
-          "toastyVladUI"
+          "toastyVladUI",
         ]);
         // Убираем через 1.5 секунды
         k.wait(1.5, () => k.destroy(toasty));
