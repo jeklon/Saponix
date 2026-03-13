@@ -261,7 +261,6 @@ export default function game() {
     if (score > 0 && !sonic.invincible) {
       spawnBurstRings(sonic.pos, score);
       scoreBeforeDeath = score;
-      console.log(scoreBeforeDeath);
       score = 0;
       scoreText.text = `BUGS are FIXED : ${score}`;
       updateLevelByScore();
@@ -294,20 +293,11 @@ export default function game() {
       });
 
       return;
-    } else {    if (score > 0 && !sonic.invincible) {
-      spawnBurstRings(sonic.pos, score);
-      score = 0;
-      scoreText.text = `BUGS are FIXED : ${score}`;
-      updateLevelByScore();
-      // Делаем Соника неуязвимым
-      sonic.invincible = true;
-      
     }
-      // Если score == 0 — сразу gameover
-      
-      k.setData("current-score", scoreBeforeDeath);
-      k.go("gameover", citySfx, sanyaGameOverSound);
-    }
+
+    // Если score == 0 — сразу gameover
+    k.setData("current-score", scoreBeforeDeath);
+    k.go("gameover", citySfx, sanyaGameOverSound);
   });
 
   let gameSpeed = 300;
@@ -406,7 +396,7 @@ export default function game() {
     k.wait(waitTime, spawnMotoBug);
   };
 
-    const spawnMotoBugPasha = () => {
+  const spawnMotoBugPasha = () => {
     if (isBossFightActive()) {
       k.wait(0.8, spawnMotoBugPasha);
       return;
