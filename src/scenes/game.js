@@ -12,6 +12,22 @@ const LEVELS = [
   { name: "ARCHITECT", minScore: 250, speedBonus: 190, enemySpawnScale: 0.72, ringDelay: [0.65, 1.4] },
 ];
 
+const DEFAULT_RING_DELAY = [1.4, 2.6];
+
+function getSafeRingDelay(score = 0) {
+  const level = getCurrentLevel(score);
+  const rawDelay = level?.ringDelay;
+
+  const minDelay = Number(rawDelay?.[0]);
+  const maxDelay = Number(rawDelay?.[1]);
+
+  if (Number.isFinite(minDelay) && Number.isFinite(maxDelay) && minDelay > 0 && maxDelay >= minDelay) {
+    return [minDelay, maxDelay];
+  }
+
+  return DEFAULT_RING_DELAY;
+}
+
 function getCurrentLevel(score = 0) {
   for (let i = LEVELS.length - 1; i >= 0; i--) {
     if (score >= LEVELS[i].minScore) return LEVELS[i];
