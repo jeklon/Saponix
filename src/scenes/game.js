@@ -5,12 +5,28 @@ import { makeRing } from "../entities/ring";
 
 
 const LEVELS = [
-  { name: "INTERN", minScore: 0, speedBonus: 0, enemySpawnScale: 1 },
-  { name: "JUNIOR", minScore: 40, speedBonus: 40, enemySpawnScale: 0.92 },
-  { name: "MIDDLE", minScore: 90, speedBonus: 80, enemySpawnScale: 0.85 },
-  { name: "SENIOR", minScore: 160, speedBonus: 130, enemySpawnScale: 0.78 },
-  { name: "ARCHITECT", minScore: 250, speedBonus: 190, enemySpawnScale: 0.72 },
+  { name: "INTERN", minScore: 0, speedBonus: 0, enemySpawnScale: 1, ringDelay: [1.4, 2.6] },
+  { name: "JUNIOR", minScore: 40, speedBonus: 40, enemySpawnScale: 0.92, ringDelay: [1.2, 2.3] },
+  { name: "MIDDLE", minScore: 90, speedBonus: 80, enemySpawnScale: 0.85, ringDelay: [1, 2] },
+  { name: "SENIOR", minScore: 160, speedBonus: 130, enemySpawnScale: 0.78, ringDelay: [0.8, 1.7] },
+  { name: "ARCHITECT", minScore: 250, speedBonus: 190, enemySpawnScale: 0.72, ringDelay: [0.65, 1.4] },
 ];
+
+const DEFAULT_RING_DELAY = [1.4, 2.6];
+
+function getSafeRingDelay(score = 0) {
+  const level = getCurrentLevel(score);
+  const rawDelay = level?.ringDelay;
+
+  const minDelay = Number(rawDelay?.[0]);
+  const maxDelay = Number(rawDelay?.[1]);
+
+  if (Number.isFinite(minDelay) && Number.isFinite(maxDelay) && minDelay > 0 && maxDelay >= minDelay) {
+    return [minDelay, maxDelay];
+  }
+
+  return DEFAULT_RING_DELAY;
+}
 
 function getCurrentLevel(score = 0) {
   for (let i = LEVELS.length - 1; i >= 0; i--) {
@@ -387,8 +403,8 @@ export default function game() {
       if (ring.pos.x < 0) k.destroy(ring);
     });
 
-    const [minDelay, maxDelay] = getCurrentLevel().ringDelay;
-    const waitTime = k.rand(minDelay, maxDelay);
+    const ringDelay = getSafeRingDelay(score);
+    const waitTime = k.rand(ringDelay[0], ringDelay[1]);
 
     k.wait(waitTime, spawnRing);
   };
