@@ -21,12 +21,12 @@ export function makeSonic(pos) {
           }
         });
 
-        k.onButtonDown("moveLeft", () => {
+        k.onKeyDown("a", () => {
           if (!this.horizontalMovementEnabled) return;
           this.move(-this.horizontalSpeed, 0);
         });
 
-        k.onButtonDown("moveRight", () => {
+        k.onKeyDown("d", () => {
           if (!this.horizontalMovementEnabled) return;
           this.move(this.horizontalSpeed, 0);
         });
