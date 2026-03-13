@@ -46,9 +46,86 @@ export default function game() {
     k.text("BUGS are FIXED : 0", { font: "mania", size: 72 }),
     k.pos(20, 20),
   ]);
+  const levels = [
+    {
+      title: "LEVEL 1: INTERN",
+      requiredScore: 0,
+      speedBoost: 0,
+      motobugDelay: [1.3, 2.8],
+      motobugPashaDelay: [1.5, 3],
+      ringDelay: [0.8, 2.8],
+    },
+    {
+      title: "LEVEL 2: JUNIOR",
+      requiredScore: 40,
+      speedBoost: 140,
+      motobugDelay: [1, 2.2],
+      motobugPashaDelay: [1.2, 2.6],
+      ringDelay: [0.7, 2.4],
+    },
+    {
+      title: "LEVEL 3: MIDDLE",
+      requiredScore: 100,
+      speedBoost: 260,
+      motobugDelay: [0.8, 1.8],
+      motobugPashaDelay: [0.9, 2],
+      ringDelay: [0.6, 2.1],
+    },
+    {
+      title: "LEVEL 4: SENIOR",
+      requiredScore: 180,
+      speedBoost: 400,
+      motobugDelay: [0.6, 1.4],
+      motobugPashaDelay: [0.7, 1.5],
+      ringDelay: [0.5, 1.8],
+    },
+    {
+      title: "LEVEL 5: ARCHITECT",
+      requiredScore: 280,
+      speedBoost: 560,
+      motobugDelay: [0.5, 1.1],
+      motobugPashaDelay: [0.55, 1.2],
+      ringDelay: [0.4, 1.5],
+    },
+  ];
+  let currentLevel = 0;
+  const levelText = k.add([
+    k.text(levels[currentLevel].title, { font: "mania", size: 40 }),
+    k.pos(20, 180),
+    k.z(100),
+  ]);
   let score = 0;
   let scoreBeforeDeath = 0;
   let scoreMultiplier = 0;
+
+  const getLevelIndexByScore = (currentScore) => {
+    let levelIndex = 0;
+    levels.forEach((level, index) => {
+      if (currentScore >= level.requiredScore) levelIndex = index;
+    });
+    return levelIndex;
+  };
+
+  const getCurrentLevel = () => levels[currentLevel];
+
+  const updateLevelByScore = () => {
+    const nextLevel = getLevelIndexByScore(score);
+    if (nextLevel === currentLevel) return;
+    const leveledUp = nextLevel > currentLevel;
+    currentLevel = nextLevel;
+    levelText.text = levels[currentLevel].title;
+
+    if (leveledUp) {
+      k.play("hyper-ring", { volume: 0.4 });
+      const levelUpText = k.add([
+        k.text(`NEW ${levels[currentLevel].title}!`, { font: "mania", size: 60 }),
+        k.anchor("center"),
+        k.pos(k.center()),
+        k.z(500),
+      ]);
+      k.wait(1.2, () => k.destroy(levelUpText));
+    }
+  };
   sonic.onCollide("ring", (ring) => {
     if (sonic.invincible) return; // Не подбираем кольца, если неуязвим!
 
@@ -78,6 +155,7 @@ export default function game() {
     k.destroy(ring);
     score++;
     scoreText.text = `BUGS are FIXED : ${score}`;
+    updateLevelByScore();
     sonic.ringCollectUI.text = "+1 Bug Fix";
     k.wait(1, () => {
       sonic.ringCollectUI.text = "";
@@ -96,6 +174,7 @@ export default function game() {
       scoreMultiplier += 1;
       score += 10 * scoreMultiplier;
       scoreText.text = `BUGS are FIXED : ${score}`;
+      updateLevelByScore();
       if (scoreMultiplier === 1)
         sonic.ringCollectUI.text = `+${10 * scoreMultiplier} BUG FIX`;
       if (scoreMultiplier > 1) sonic.ringCollectUI.text = `x${scoreMultiplier}`;
@@ -127,6 +206,7 @@ export default function game() {
       console.log(scoreBeforeDeath);
       score = 0;
       scoreText.text = `BUGS are FIXED : ${score}`;
+      updateLevelByScore();
       k.play("LoseRings", { volume: 0.5 });
 
       // Делаем Соника неуязвимым
@@ -160,6 +240,7 @@ export default function game() {
       spawnBurstRings(sonic.pos, score);
       score = 0;
       scoreText.text = `BUGS are FIXED : ${score}`;
+      updateLevelByScore();
       // Делаем Соника неуязвимым
       sonic.invincible = true;
       
@@ -176,21 +257,25 @@ export default function game() {
     gameSpeed += 50;
   });
 
+  const getAdjustedGameSpeed = () => gameSpeed + getCurrentLevel().speedBoost;
+
   const spawnMotoBug = () => {
     const motobug = makeMotobug(k.vec2(1950, 773));
     motobug.onUpdate(() => {
+      const adjustedGameSpeed = getAdjustedGameSpeed();
       if (gameSpeed < 3000) {
-        motobug.move(-(gameSpeed + 300), 0);
+        motobug.move(-(adjustedGameSpeed + 300), 0);
         return;
       }
-      motobug.move(-gameSpeed, 0);
+      motobug.move(-adjustedGameSpeed, 0);
     });
 
     motobug.onExitScreen(() => {
       if (motobug.pos.x < 0) k.destroy(motobug);
     });
 
-    const waitTime = k.rand(0.5, 2.5);
+    const [minDelay, maxDelay] = getCurrentLevel().motobugDelay;
+    const waitTime = k.rand(minDelay, maxDelay);
 
     k.wait(waitTime, spawnMotoBug);
   };
@@ -198,18 +283,20 @@ export default function game() {
     const spawnMotoBugPasha = () => {
     const motobug = makeMotobugPasha(k.vec2(1950, 773));
     motobug.onUpdate(() => {
+      const adjustedGameSpeed = getAdjustedGameSpeed();
       if (gameSpeed < 3000) {
-        motobug.move(-(gameSpeed + 300), 0);
+        motobug.move(-(adjustedGameSpeed + 300), 0);
         return;
       }
-      motobug.move(-gameSpeed, 0);
+      motobug.move(-adjustedGameSpeed, 0);
     });
 
     motobug.onExitScreen(() => {
       if (motobug.pos.x < 0) k.destroy(motobug);
     });
 
-    const waitTime = k.rand(0.5, 2.5);
+    const [minDelay, maxDelay] = getCurrentLevel().motobugPashaDelay;
+    const waitTime = k.rand(minDelay, maxDelay);
 
     k.wait(waitTime, spawnMotoBugPasha);
   };
@@ -220,13 +307,14 @@ export default function game() {
   const spawnRing = () => {
     const ring = makeRing(k.vec2(1950, 745));
     ring.onUpdate(() => {
-      ring.move(-gameSpeed, 0);
+      ring.move(-getAdjustedGameSpeed(), 0);
     });
     ring.onExitScreen(() => {
       if (ring.pos.x < 0) k.destroy(ring);
     });
 
-    const waitTime = k.rand(0.5, 3);
+    const [minDelay, maxDelay] = getCurrentLevel().ringDelay;
+    const waitTime = k.rand(minDelay, maxDelay);
 
     k.wait(waitTime, spawnRing);
   };
@@ -262,7 +350,7 @@ export default function game() {
       platforms.push(platforms.shift());
     }
 
-    platforms[0].move(-gameSpeed, 0);
+    platforms[0].move(-getAdjustedGameSpeed(), 0);
     platforms[1].moveTo(platforms[0].pos.x + platforms[1].width * 4, 450);
   });
 
@@ -366,5 +454,4 @@ function spawnBurstRings(origin, count = score) {
     }
   }
 }
-
 
