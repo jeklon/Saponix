@@ -3,6 +3,22 @@ import { makeSonic } from "../entities/sonic";
 import { makeMotobug, makeMotobugPasha } from "../entities/motobug";
 import { makeRing } from "../entities/ring";
 
+
+const LEVELS = [
+  { name: "INTERN", minScore: 0, speedBonus: 0, enemySpawnScale: 1 },
+  { name: "JUNIOR", minScore: 40, speedBonus: 40, enemySpawnScale: 0.92 },
+  { name: "MIDDLE", minScore: 90, speedBonus: 80, enemySpawnScale: 0.85 },
+  { name: "SENIOR", minScore: 160, speedBonus: 130, enemySpawnScale: 0.78 },
+  { name: "ARCHITECT", minScore: 250, speedBonus: 190, enemySpawnScale: 0.72 },
+];
+
+function getCurrentLevel(score = 0) {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (score >= LEVELS[i].minScore) return LEVELS[i];
+  }
+  return LEVELS[0];
+}
+
 export default function game() {
   let sanyaGameOverSound = k.play("SanyaGameOver", { volume: 0.5, loop: false });
   sanyaGameOverSound.paused = true;
@@ -47,6 +63,12 @@ export default function game() {
     k.pos(20, 20),
   ]);
 
+  const levelText = k.add([
+    k.text(`LEVEL: ${getCurrentLevel(0).name}`, { font: "mania", size: 32 }),
+    k.pos(20, 60),
+    k.z(100),
+  ]);
+
   let score = 0;
   let scoreBeforeDeath = 0;
   let scoreMultiplier = 0;
@@ -70,6 +92,10 @@ export default function game() {
   ]);
 
   const isBossFightActive = () => bossFightStarted && !bossDefeated;
+
+  const refreshLevelUI = () => {
+    levelText.text = `LEVEL: ${getCurrentLevel(score).name}`;
+  };
 
   const clearNormalEntities = () => {
     k.get("enemy").forEach((enemy) => {
@@ -148,7 +174,7 @@ export default function game() {
     k.destroy(ring);
     score++;
     scoreText.text = `BUGS are FIXED : ${score}`;
-    updateLevelByScore();
+    refreshLevelUI();
     sonic.ringCollectUI.text = "+1 Bug Fix";
     k.wait(1, () => {
       sonic.ringCollectUI.text = "";
@@ -183,6 +209,7 @@ export default function game() {
           bossHealthText.text = "";
           score += 200;
           scoreText.text = `BUGS are FIXED : ${score}`;
+          refreshLevelUI();
 
           const bossDefeatedText = k.add([
             k.text("BOSS FIXED! +200", { font: "mania", size: 60 }),
@@ -204,7 +231,7 @@ export default function game() {
       scoreMultiplier += 1;
       score += 10 * scoreMultiplier;
       scoreText.text = `BUGS are FIXED : ${score}`;
-      updateLevelByScore();
+      refreshLevelUI();
       if (scoreMultiplier === 1)
         sonic.ringCollectUI.text = `+${10 * scoreMultiplier} BUG FIX`;
       if (scoreMultiplier > 1) sonic.ringCollectUI.text = `x${scoreMultiplier}`;
@@ -233,7 +260,7 @@ export default function game() {
       scoreBeforeDeath = score;
       score = 0;
       scoreText.text = `BUGS are FIXED : ${score}`;
-      updateLevelByScore();
+      refreshLevelUI();
       k.play("LoseRings", { volume: 0.5 });
 
       sonic.invincible = true;
@@ -285,8 +312,10 @@ export default function game() {
   });
 
   const currentWorldSpeed = () => {
-    if (isBossFightActive()) return Math.max(180, gameSpeed * 0.4);
-    return gameSpeed;
+    const level = getCurrentLevel(score);
+    const scaledSpeed = gameSpeed + level.speedBonus;
+    if (isBossFightActive()) return Math.max(180, scaledSpeed * 0.4);
+    return scaledSpeed;
   };
 
   const spawnMotoBug = () => {
@@ -309,7 +338,8 @@ export default function game() {
       if (motobug.pos.x < 0) k.destroy(motobug);
     });
 
-    const waitTime = k.rand(0.5, 2.5);
+    const level = getCurrentLevel(score);
+    const waitTime = k.rand(0.5, 2.5) * level.enemySpawnScale;
     k.wait(waitTime, spawnMotoBug);
   };
 
@@ -333,7 +363,8 @@ export default function game() {
       if (motobug.pos.x < 0) k.destroy(motobug);
     });
 
-    const waitTime = k.rand(0.5, 2.5);
+    const level = getCurrentLevel(score);
+    const waitTime = k.rand(0.5, 2.5) * level.enemySpawnScale;
     k.wait(waitTime, spawnMotoBugPasha);
   };
 
