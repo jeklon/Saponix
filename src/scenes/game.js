@@ -148,6 +148,7 @@ export default function game() {
     k.destroy(ring);
     score++;
     scoreText.text = `BUGS are FIXED : ${score}`;
+    updateLevelByScore();
     sonic.ringCollectUI.text = "+1 Bug Fix";
     k.wait(1, () => {
       sonic.ringCollectUI.text = "";
@@ -203,6 +204,7 @@ export default function game() {
       scoreMultiplier += 1;
       score += 10 * scoreMultiplier;
       scoreText.text = `BUGS are FIXED : ${score}`;
+      updateLevelByScore();
       if (scoreMultiplier === 1)
         sonic.ringCollectUI.text = `+${10 * scoreMultiplier} BUG FIX`;
       if (scoreMultiplier > 1) sonic.ringCollectUI.text = `x${scoreMultiplier}`;
@@ -231,6 +233,7 @@ export default function game() {
       scoreBeforeDeath = score;
       score = 0;
       scoreText.text = `BUGS are FIXED : ${score}`;
+      updateLevelByScore();
       k.play("LoseRings", { volume: 0.5 });
 
       sonic.invincible = true;
@@ -351,7 +354,8 @@ export default function game() {
       if (ring.pos.x < 0) k.destroy(ring);
     });
 
-    const waitTime = k.rand(0.5, 3);
+    const [minDelay, maxDelay] = getCurrentLevel().ringDelay;
+    const waitTime = k.rand(minDelay, maxDelay);
 
     k.wait(waitTime, spawnRing);
   };
