@@ -6,7 +6,7 @@ export function makeSonic(pos) {
     k.scale(4),
     k.area(),
     k.anchor("center"),
-    k.pos(pos),
+    k.pos(pos.x, pos.y),
     k.body({ jumpForce: 1700 }),
     {
       ringCollectUI: null,
