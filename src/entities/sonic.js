@@ -21,6 +21,16 @@ export function makeSonic(pos) {
           }
         });
 
+        k.onKeyDown("a", () => {
+          if (!this.horizontalMovementEnabled) return;
+          this.move(-this.horizontalSpeed, 0);
+        });
+
+        k.onKeyDown("d", () => {
+          if (!this.horizontalMovementEnabled) return;
+          this.move(this.horizontalSpeed, 0);
+        });
+
         const moveLeft = () => {
           if (!this.horizontalMovementEnabled) return;
           this.move(-this.horizontalSpeed, 0);

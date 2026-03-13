@@ -404,8 +404,10 @@ export default function game() {
       if (ring.pos.x < 0) k.destroy(ring);
     });
 
-    const ringDelay = getSafeRingDelay(score);
-    const waitTime = k.rand(ringDelay[0], ringDelay[1]);
+    const level = getCurrentLevel(score);
+    const ringDelay = Array.isArray(level?.ringDelay) ? level.ringDelay : [1.4, 2.6];
+    const [minDelay, maxDelay] = ringDelay;
+    const waitTime = k.rand(minDelay, maxDelay);
 
     k.wait(waitTime, spawnRing);
   };
