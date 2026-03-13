@@ -6,7 +6,7 @@ export function makeRing(pos) {
     k.area(),
     k.scale(4),
     k.anchor("center"),
-    k.pos(pos),
+    k.pos(pos.x, pos.y),
     k.offscreen(),
     "ring",
   ]);

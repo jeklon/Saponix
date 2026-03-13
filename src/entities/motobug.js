@@ -6,7 +6,7 @@ export function makeMotobug(pos) {
     k.area({ shape: new k.Rect(k.vec2(-5, 0), 32, 32) }),
     k.scale(4),
     k.anchor("center"),
-    k.pos(pos),
+    k.pos(pos.x, pos.y),
     k.offscreen(),
     "enemy",
   ]);
@@ -18,7 +18,7 @@ export function makeMotobugPasha(pos) {
     k.area({ shape: new k.Rect(k.vec2(-5, 0), 32, 32) }),
     k.scale(4),
     k.anchor("center"),
-    k.pos(pos),
+    k.pos(pos.x, pos.y),
     k.offscreen(),
     "enemy",
   ]);

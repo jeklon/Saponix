@@ -18,7 +18,7 @@ export default function disclaimer() {
       size: 64,
     }),
     k.anchor("center"),
-    k.pos(k.center()),
+    k.pos(k.center().x, k.center().y),
   ]);
 
   k.onButtonPress("jump", () => k.go("main-menu"));
