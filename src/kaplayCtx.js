@@ -11,6 +11,12 @@ const k = kaplay({
       keyboard: ["space"],
       mouse: "left",
     },
+    moveLeft: {
+      keyboard: ["a"],
+    },
+    moveRight: {
+      keyboard: ["d"],
+    },
   },
   touchToMouse: true,
   debug: false,
