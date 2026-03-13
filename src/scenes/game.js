@@ -44,13 +44,15 @@ export default function game() {
   sonic.setControls();
   sonic.setEvents();
 
+  const centerPos = k.center();
+
   const controlsText = k.add([
     k.text("Press Space/Click/Touch to Jump!", {
       font: "mania",
       size: 64,
     }),
     k.anchor("center"),
-    k.pos(k.center()),
+    k.pos(centerPos.x, centerPos.y),
   ]);
 
   const dismissControlsAction = k.onButtonPress("jump", () => {
@@ -113,7 +115,7 @@ export default function game() {
     const warningText = k.add([
       k.text("BOSS INCOMING!", { font: "mania", size: 72 }),
       k.anchor("center"),
-      k.pos(k.center()),
+      k.pos(centerPos.x, centerPos.y),
       k.z(500),
     ]);
     k.wait(1.4, () => k.destroy(warningText));
@@ -214,7 +216,7 @@ export default function game() {
           const bossDefeatedText = k.add([
             k.text("BOSS FIXED! +200", { font: "mania", size: 60 }),
             k.anchor("center"),
-            k.pos(k.center()),
+            k.pos(centerPos.x, centerPos.y),
             k.z(500),
           ]);
           k.wait(2, () => k.destroy(bossDefeatedText));
