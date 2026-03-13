@@ -126,10 +126,11 @@ export default function game() {
     if (bossFightStarted) return;
 
     bossFightStarted = true;
+    sonic.horizontalMovementEnabled = true;
     clearNormalEntities();
 
     const warningText = k.add([
-      k.text("BOSS INCOMING!", { font: "mania", size: 72 }),
+      k.text("BOSS INCOMING!  USE A / D", { font: "mania", size: 64 }),
       k.anchor("center"),
       k.pos(centerPos.x, centerPos.y),
       k.z(500),
