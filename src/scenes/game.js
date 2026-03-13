@@ -3,6 +3,22 @@ import { makeSonic } from "../entities/sonic";
 import { makeMotobug, makeMotobugPasha } from "../entities/motobug";
 import { makeRing } from "../entities/ring";
 
+
+const LEVELS = [
+  { name: "INTERN", minScore: 0, speedBonus: 0, enemySpawnScale: 1 },
+  { name: "JUNIOR", minScore: 40, speedBonus: 40, enemySpawnScale: 0.92 },
+  { name: "MIDDLE", minScore: 90, speedBonus: 80, enemySpawnScale: 0.85 },
+  { name: "SENIOR", minScore: 160, speedBonus: 130, enemySpawnScale: 0.78 },
+  { name: "ARCHITECT", minScore: 250, speedBonus: 190, enemySpawnScale: 0.72 },
+];
+
+function getCurrentLevel(score = 0) {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (score >= LEVELS[i].minScore) return LEVELS[i];
+  }
+  return LEVELS[0];
+}
+
 export default function game() {
   let sanyaGameOverSound = k.play("SanyaGameOver", { volume: 0.5, loop: false });
   sanyaGameOverSound.paused = true;
@@ -46,20 +62,104 @@ export default function game() {
     k.text("BUGS are FIXED : 0", { font: "mania", size: 72 }),
     k.pos(20, 20),
   ]);
+
+  const levelText = k.add([
+    k.text(`LEVEL: ${getCurrentLevel(0).name}`, { font: "mania", size: 32 }),
+    k.pos(20, 60),
+    k.z(100),
+  ]);
+
   let score = 0;
   let scoreBeforeDeath = 0;
   let scoreMultiplier = 0;
+  let survivedSeconds = 0;
+  const bossTriggerSeconds = 30;
+  let bossFightStarted = false;
+  let bossDefeated = false;
+  let bossInvulnerable = false;
+  let bossEntity = null;
+
+  const timerText = k.add([
+    k.text(`SURVIVED: ${survivedSeconds}s`, { font: "mania", size: 32 }),
+    k.pos(20, 100),
+    k.z(100),
+  ]);
+
+  const bossHealthText = k.add([
+    k.text("", { font: "mania", size: 32 }),
+    k.pos(20, 140),
+    k.z(100),
+  ]);
+
+  const isBossFightActive = () => bossFightStarted && !bossDefeated;
+
+  const refreshLevelUI = () => {
+    levelText.text = `LEVEL: ${getCurrentLevel(score).name}`;
+  };
+
+  const clearNormalEntities = () => {
+    k.get("enemy").forEach((enemy) => {
+      if (!enemy.isBoss) k.destroy(enemy);
+    });
+    k.get("ring").forEach((ring) => k.destroy(ring));
+  };
+
+  const startBossFight = () => {
+    if (bossFightStarted) return;
+
+    bossFightStarted = true;
+    clearNormalEntities();
+
+    const warningText = k.add([
+      k.text("BOSS INCOMING!", { font: "mania", size: 72 }),
+      k.anchor("center"),
+      k.pos(k.center()),
+      k.z(500),
+    ]);
+    k.wait(1.4, () => k.destroy(warningText));
+
+    bossEntity = k.add([
+      k.sprite("motobugPasha", { anim: "run" }),
+      k.area({ shape: new k.Rect(k.vec2(-5, 0), 32, 32) }),
+      k.scale(8),
+      k.anchor("center"),
+      k.pos(1600, 700),
+      k.body({ jumpForce: 1500 }),
+      "enemy",
+      "boss",
+      {
+        isBoss: true,
+        hp: 14,
+        direction: -1,
+        jumpCooldown: 0,
+      },
+    ]);
+
+    bossHealthText.text = `BOSS HP: ${bossEntity.hp}`;
+
+    bossEntity.onUpdate(() => {
+      if (!bossEntity.exists()) return;
+
+      bossEntity.move(bossEntity.direction * 460, 0);
+
+      if (bossEntity.pos.x < 880) bossEntity.direction = 1;
+      if (bossEntity.pos.x > 1800) bossEntity.direction = -1;
+
+      if (bossEntity.isGrounded()) {
+        bossEntity.jumpCooldown -= k.dt();
+        if (bossEntity.jumpCooldown <= 0) {
+          bossEntity.jump(1300);
+          bossEntity.jumpCooldown = 1.2;
+        }
+      }
+    });
+  };
+
   sonic.onCollide("ring", (ring) => {
-    if (sonic.invincible) return; // Не подбираем кольца, если неуязвим!
+    if (sonic.invincible || isBossFightActive()) return;
 
-    // Проверяем, не находится ли кольцо под мотобагом
-    const motobugs = k.get("enemy"); // Получаем всех мотобагов на сцене (если тег "enemy" присвоен мотобагу)
-    const ringBox = ring.area ? ring.area : ring; // если есть area, используем его
-
-    // Проверяем пересечение с каждым мотобагом
-    let isUnderMotobug = motobugs.some(motobug => {
-      // Проверяем пересечение прямоугольников
-      const bugBox = motobug.area ? motobug.area : motobug;
+    const motobugs = k.get("enemy");
+    const isUnderMotobug = motobugs.some((motobug) => {
       return (
         ring.pos.x < motobug.pos.x + motobug.width &&
         ring.pos.x + ring.width > motobug.pos.x &&
@@ -68,26 +168,61 @@ export default function game() {
       );
     });
 
-    if (isUnderMotobug) {
-      // Кольцо под мотобагом — не подбираем!
-      return;
-    }
+    if (isUnderMotobug) return;
 
-    // Если не под мотобагом — обычная логика
     k.play("ring", { volume: 0.5 });
     k.destroy(ring);
     score++;
     scoreText.text = `BUGS are FIXED : ${score}`;
+    refreshLevelUI();
     sonic.ringCollectUI.text = "+1 Bug Fix";
     k.wait(1, () => {
       sonic.ringCollectUI.text = "";
     });
   });
+
   sonic.onCollide("enemy", (enemy) => {
-    if (sonic.invincible) return; // Неуязвим — не реагируем!
+    if (sonic.invincible) return;
 
     if (!sonic.isGrounded()) {
-      // ...атака сверху, уничтожаем врага...
+      if (enemy.isBoss) {
+        if (bossInvulnerable) return;
+
+        k.play("destroy", { volume: 0.6 });
+        sonic.play("jump");
+        sonic.jump(1200);
+        enemy.hp -= 1;
+        bossHealthText.text = `BOSS HP: ${Math.max(0, enemy.hp)}`;
+        bossInvulnerable = true;
+        enemy.opacity = 0.5;
+
+        k.wait(0.35, () => {
+          bossInvulnerable = false;
+          if (enemy.exists()) enemy.opacity = 1;
+        });
+
+        if (enemy.hp <= 0) {
+          k.play("hyper-ring", { volume: 0.7 });
+          k.destroy(enemy);
+          bossEntity = null;
+          bossDefeated = true;
+          bossHealthText.text = "";
+          score += 200;
+          scoreText.text = `BUGS are FIXED : ${score}`;
+          refreshLevelUI();
+
+          const bossDefeatedText = k.add([
+            k.text("BOSS FIXED! +200", { font: "mania", size: 60 }),
+            k.anchor("center"),
+            k.pos(k.center()),
+            k.z(500),
+          ]);
+          k.wait(2, () => k.destroy(bossDefeatedText));
+        }
+
+        return;
+      }
+
       k.play("destroy", { volume: 0.5 });
       k.play("hyper-ring", { volume: 0.5 });
       k.destroy(enemy);
@@ -96,6 +231,7 @@ export default function game() {
       scoreMultiplier += 1;
       score += 10 * scoreMultiplier;
       scoreText.text = `BUGS are FIXED : ${score}`;
+      refreshLevelUI();
       if (scoreMultiplier === 1)
         sonic.ringCollectUI.text = `+${10 * scoreMultiplier} BUG FIX`;
       if (scoreMultiplier > 1) sonic.ringCollectUI.text = `x${scoreMultiplier}`;
@@ -103,37 +239,34 @@ export default function game() {
         sonic.ringCollectUI.text = "";
       });
 
-      // --- Показываем toastyVlad при scoreMultiplier === 3 ---
       if (scoreMultiplier === 2) {
         k.play("toasty");
         const toasty = k.add([
           k.sprite("toastyVlad", { anim: "toasty" }),
           k.area(),
-          k.anchor("botright"), // якорь — правый нижний угол спрайта
-          k.pos(k.width(), k.height()), // позиция — правый нижний угол экрана
+          k.anchor("botright"),
+          k.pos(k.width(), k.height()),
           k.z(999),
-          "toastyVladUI"
+          "toastyVladUI",
         ]);
-        // Убираем через 1.5 секунды
         k.wait(1.5, () => k.destroy(toasty));
       }
 
       return;
     }
-    
-    if (score > 0 && !sonic.invincible) {
+
+    if (score > 0) {
       spawnBurstRings(sonic.pos, score);
       scoreBeforeDeath = score;
-      console.log(scoreBeforeDeath);
       score = 0;
       scoreText.text = `BUGS are FIXED : ${score}`;
+      refreshLevelUI();
       k.play("LoseRings", { volume: 0.5 });
 
-      // Делаем Соника неуязвимым
       sonic.invincible = true;
       let blinkCount = 0;
       const blinkTotal = 4;
-      const blinkInterval = 0.25; // секунды
+      const blinkInterval = 0.25;
 
       function blink() {
         if (!sonic.exists()) return;
@@ -145,10 +278,10 @@ export default function game() {
           sonic.opacity = 1;
         }
       }
+
       sonic.opacity = 0.5;
       blink();
 
-      // Через 2 секунды возвращаем смертность и дефолтный вид
       k.wait(2, () => {
         if (!sonic.exists()) return;
         sonic.invincible = false;
@@ -156,19 +289,10 @@ export default function game() {
       });
 
       return;
-    } else {    if (score > 0 && !sonic.invincible) {
-      spawnBurstRings(sonic.pos, score);
-      score = 0;
-      scoreText.text = `BUGS are FIXED : ${score}`;
-      // Делаем Соника неуязвимым
-      sonic.invincible = true;
-      
     }
-      // Если score == 0 — сразу gameover
-      
-      k.setData("current-score", scoreBeforeDeath);
-      k.go("gameover", citySfx, sanyaGameOverSound);
-    }
+
+    k.setData("current-score", scoreBeforeDeath);
+    k.go("gameover", citySfx, sanyaGameOverSound);
   });
 
   let gameSpeed = 300;
@@ -176,41 +300,71 @@ export default function game() {
     gameSpeed += 50;
   });
 
+  k.loop(1, () => {
+    if (isBossFightActive()) return;
+
+    survivedSeconds += 1;
+    timerText.text = `SURVIVED: ${survivedSeconds}s`;
+
+    if (survivedSeconds >= bossTriggerSeconds) {
+      startBossFight();
+    }
+  });
+
+  const currentWorldSpeed = () => {
+    const level = getCurrentLevel(score);
+    const scaledSpeed = gameSpeed + level.speedBonus;
+    if (isBossFightActive()) return Math.max(180, scaledSpeed * 0.4);
+    return scaledSpeed;
+  };
+
   const spawnMotoBug = () => {
+    if (isBossFightActive()) {
+      k.wait(0.7, spawnMotoBug);
+      return;
+    }
+
     const motobug = makeMotobug(k.vec2(1950, 773));
     motobug.onUpdate(() => {
+      const worldSpeed = currentWorldSpeed();
       if (gameSpeed < 3000) {
-        motobug.move(-(gameSpeed + 300), 0);
+        motobug.move(-(worldSpeed + 300), 0);
         return;
       }
-      motobug.move(-gameSpeed, 0);
+      motobug.move(-worldSpeed, 0);
     });
 
     motobug.onExitScreen(() => {
       if (motobug.pos.x < 0) k.destroy(motobug);
     });
 
-    const waitTime = k.rand(0.5, 2.5);
-
+    const level = getCurrentLevel(score);
+    const waitTime = k.rand(0.5, 2.5) * level.enemySpawnScale;
     k.wait(waitTime, spawnMotoBug);
   };
 
-    const spawnMotoBugPasha = () => {
+  const spawnMotoBugPasha = () => {
+    if (isBossFightActive()) {
+      k.wait(0.7, spawnMotoBugPasha);
+      return;
+    }
+
     const motobug = makeMotobugPasha(k.vec2(1950, 773));
     motobug.onUpdate(() => {
+      const worldSpeed = currentWorldSpeed();
       if (gameSpeed < 3000) {
-        motobug.move(-(gameSpeed + 300), 0);
+        motobug.move(-(worldSpeed + 300), 0);
         return;
       }
-      motobug.move(-gameSpeed, 0);
+      motobug.move(-worldSpeed, 0);
     });
 
     motobug.onExitScreen(() => {
       if (motobug.pos.x < 0) k.destroy(motobug);
     });
 
-    const waitTime = k.rand(0.5, 2.5);
-
+    const level = getCurrentLevel(score);
+    const waitTime = k.rand(0.5, 2.5) * level.enemySpawnScale;
     k.wait(waitTime, spawnMotoBugPasha);
   };
 
@@ -218,9 +372,14 @@ export default function game() {
   spawnMotoBugPasha();
 
   const spawnRing = () => {
+    if (isBossFightActive()) {
+      k.wait(0.7, spawnRing);
+      return;
+    }
+
     const ring = makeRing(k.vec2(1950, 745));
     ring.onUpdate(() => {
-      ring.move(-gameSpeed, 0);
+      ring.move(-currentWorldSpeed(), 0);
     });
     ring.onExitScreen(() => {
       if (ring.pos.x < 0) k.destroy(ring);
@@ -253,7 +412,6 @@ export default function game() {
     bgPieces[0].move(-100, 0);
     bgPieces[1].moveTo(bgPieces[0].pos.x + bgPieceWidth * 2, 0);
 
-    // for jump effect
     bgPieces[0].moveTo(bgPieces[0].pos.x, -sonic.pos.y / 10 - 50);
     bgPieces[1].moveTo(bgPieces[1].pos.x, -sonic.pos.y / 10 - 50);
 
@@ -262,50 +420,48 @@ export default function game() {
       platforms.push(platforms.shift());
     }
 
-    platforms[0].move(-gameSpeed, 0);
+    platforms[0].move(-currentWorldSpeed(), 0);
     platforms[1].moveTo(platforms[0].pos.x + platforms[1].width * 4, 450);
   });
 
-  let volume = k.getData("volume", 0.5); // Получаем сохраненную громкость или используем 0.5
+  let volume = k.getData("volume", 0.5);
   k.setVolume(volume);
-  
+
   const volumeText = k.add([
-    k.text(`VOLUME: ${Math.round(volume * 100)}%`, { 
-      font: "mania", 
-      size: 32 
+    k.text(`VOLUME: ${Math.round(volume * 100)}%`, {
+      font: "mania",
+      size: 32,
     }),
-    k.pos(20, 100), // Располагаем под счетом
+    k.pos(20, 180),
     k.z(100),
   ]);
 
   k.onKeyPress("left", () => {
-    volume = Math.max(0, volume - 0.1); // Уменьшаем громкость на 10%
+    volume = Math.max(0, volume - 0.1);
     k.setVolume(volume);
-    k.setData("volume", volume); // Сохраняем значение
+    k.setData("volume", volume);
     volumeText.text = `VOLUME: ${Math.round(volume * 100)}%`;
   });
 
   k.onKeyPress("right", () => {
-    volume = Math.min(1, volume + 0.1); // Увеличиваем громкость на 10%
+    volume = Math.min(1, volume + 0.1);
     k.setVolume(volume);
-    k.setData("volume", volume); // Сохраняем значение
+    k.setData("volume", volume);
     volumeText.text = `VOLUME: ${Math.round(volume * 100)}%`;
   });
 }
 
-// Функция для анимации разлетающихся колец
-function spawnBurstRings(origin, count = score) {
+function spawnBurstRings(origin, count = 0) {
   let t = 0;
   let angle = 101.25;
   let n = false;
   let speed = 1200;
-  const bounce = 0.7; // коэффициент упругости
+  const bounce = 0.7;
 
-  // Получаем платформы и bgPieces для проверки столкновений
   const platforms = k.get("platform");
 
   while (t < count) {
-    const ring = k.add([
+    k.add([
       k.sprite("ring"),
       k.scale(2),
       k.pos(origin.x, origin.y),
@@ -318,8 +474,7 @@ function spawnBurstRings(origin, count = score) {
           this.move(this.vx, this.vy);
           this.vy += 0.4;
 
-          // Отскок от платформы
-          platforms.forEach(platform => {
+          platforms.forEach((platform) => {
             const platTop = platform.pos.y;
             const platLeft = platform.pos.x;
             const platRight = platform.pos.x + (platform.width || 1920);
@@ -335,16 +490,13 @@ function spawnBurstRings(origin, count = score) {
             }
           });
 
-          // Отскок от верхней границы экрана
           if (this.pos.y <= 0 && this.vy < 0) {
             this.pos.y = 0;
             this.vy = -this.vy * bounce;
           }
 
-          // --- МИГАНИЕ в последние 2 секунды (120 кадров) ---
           if (this.life <= 120) {
-            // Мигаем каждые 10 кадров
-            this.opacity = (Math.floor(this.life / 10) % 2 === 0) ? 0.3 : 1;
+            this.opacity = Math.floor(this.life / 10) % 2 === 0 ? 0.3 : 1;
           } else {
             this.opacity = 1;
           }
@@ -366,5 +518,3 @@ function spawnBurstRings(origin, count = score) {
     }
   }
 }
-
-
